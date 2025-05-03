@@ -57,9 +57,9 @@ public class JwtService {
     public boolean isTokenValid(String token) {
         try {
             extractAllClaims(token);
-            return false;
+            return true;  // Return true if token is valid
         } catch (JwtException | IllegalArgumentException e) {
-            return true;
+            return false;  // Return false if token is invalid
         }
     }
 
