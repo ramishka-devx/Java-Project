@@ -52,6 +52,9 @@ public class SecurityConfiguration {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
+    @Value("${app.allowed-origins}")
+    private String[] allowedOrigins;
+
     /**
      * Custom JWT Authentication Converter to extract roles from token claims.
      * Roles must be defined in the "roles" claim without any prefix.
@@ -80,8 +83,6 @@ public class SecurityConfiguration {
 
         return converter;
     }
-
-
 
     /**
      * Main Security Filter Chain configuration.
@@ -125,9 +126,17 @@ public class SecurityConfiguration {
                 )
                 .headers(headers -> {
                     headers
-                            .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                            .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                    "default-src 'self'; " +
+                                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                                    "style-src 'self' 'unsafe-inline'; " +
+                                    "img-src 'self' data:; " +
+                                    "font-src 'self';"
+                            ))
                             .defaultsDisabled()
                             .addHeaderWriter(new StaticHeadersWriter("X-Content-Type-Options", "nosniff"))
+                            .addHeaderWriter(new StaticHeadersWriter("X-Frame-Options", "DENY"))
+                            .addHeaderWriter(new StaticHeadersWriter("X-XSS-Protection", "1; mode=block"))
                             .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                             .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN));
                 });
@@ -142,9 +151,12 @@ public class SecurityConfiguration {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // Consider restricting in production
+        config.setAllowedOrigins(Arrays.asList(allowedOrigins));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        config.setExposedHeaders(Arrays.asList("Authorization"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
@@ -165,6 +177,9 @@ public class SecurityConfiguration {
      */
     @Bean
     public JwtDecoder jwtDecoder() {
+        if (jwtSecret.length() < 32) {
+            throw new IllegalArgumentException("JWT secret must be at least 32 characters long");
+        }
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(key).build();

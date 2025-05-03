@@ -1,6 +1,5 @@
 package com.codejam.codex.authzen.models;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,17 +16,21 @@ import java.util.Set;
 @Builder
 @Entity
 @ToString
-@Table(name = "users")
+@Table(name = "users", 
+       indexes = {
+           @Index(name = "idx_user_email", columnList = "email", unique = true),
+           @Index(name = "idx_user_username", columnList = "username", unique = true)
+       })
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, name = "username")
+    @Column(nullable = false, unique = true, name = "username")
     private String username;
 
-    @Column(nullable = false, name = "email")
+    @Column(nullable = false, unique = true, name = "email")
     private String email;
 
     @Column(nullable = false, name = "password")
@@ -46,7 +49,6 @@ public class User {
     @Builder.Default
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
-
     public void addRefreshToken(RefreshToken refreshToken) {
         refreshTokens.add(refreshToken);
         refreshToken.setUser(this);
@@ -61,21 +63,19 @@ public class User {
     @Builder.Default
     private List<EmailToken> emailTokens = new ArrayList<>();
 
-
-    public void addEmailTokens(EmailToken emailToken) {
+    public void addEmailToken(EmailToken emailToken) {
         emailTokens.add(emailToken);
         emailToken.setUser(this);
     }
 
     public void removeEmailToken(EmailToken emailToken) {
-        refreshTokens.remove(emailToken);
+        emailTokens.remove(emailToken);
         emailToken.setUser(null);
     }
 
     @OneToMany(mappedBy = "user", cascade = {CascadeType.ALL}, orphanRemoval = true)
     @Builder.Default
     private List<OauthProvider> oauthProviders = new ArrayList<>();
-
 
     public void addOauthProvider(OauthProvider oauthProvider) {
         oauthProviders.add(oauthProvider);
@@ -91,14 +91,13 @@ public class User {
     @Builder.Default
     private List<AuditLog> auditLogs = new ArrayList<>();
 
-
     public void addAuditLog(AuditLog auditLog) {
         auditLogs.add(auditLog);
         auditLog.setUser(this);
     }
 
     public void removeAuditLog(AuditLog auditLog) {
-        oauthProviders.remove(auditLog);
+        auditLogs.remove(auditLog);
         auditLog.setUser(null);
     }
 

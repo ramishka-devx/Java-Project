@@ -1,24 +1,29 @@
 spring:
   application:
-    name: ${SPRING_APPLICATION_NAME}
+    name: ${SPRING_APPLICATION_NAME:authzen}
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/authzen?createDatabaseIfNotExist=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
   security:
     user:
-      name:  ${ADMIN_USERNAME}
-      password:  ${ADMIN_PASSWORD}
+      name: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:admin123}
   mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     protocol: smtp
     tls: true
     properties:
@@ -33,28 +38,38 @@ spring:
       static-locations: classpath:/static/
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:}
   access-token:
-    expiry-ms: ${JWT_ACCESS_EXPIRATION}
+    expiry-ms: ${JWT_ACCESS_TOKEN_EXPIRY_MS:900000}
   refresh-token:
-    expiry-ms: ${JWT_REFRESH_EXPIRATION}
+    expiry-ms: ${JWT_REFRESH_TOKEN_EXPIRY_MS:86400000}
 
 server:
-  port: ${SERVER_PORT}
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
 
 email:
-  from: ${EMAIL_FROM}
+  from: ${EMAIL_FROM:noreply@authzen.com}
 
 github:
-  client-id: ${GITHUB_CLIENT_ID}
-  client-secret: ${GITHUB_CLIENT_SECRET}
-  redirect-uri: ${GITHUB_REDIRECT_URI}
+  client-id: ${GITHUB_CLIENT_ID:}
+  client-secret: ${GITHUB_CLIENT_SECRET:}
+  redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8080/oauth/callback}
 
 admin:
-  email: ${ADMIN_EMAIL}
-  username: ${ADMIN_USERNAME}
-  password: ${ADMIN_PASSWORD}
+  email: ${ADMIN_EMAIL:admin@authzen.com}
+  username: ${ADMIN_USERNAME:admin}
+  password: ${ADMIN_PASSWORD:admin123}
 
+app:
+  allowed-origins: ${APP_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+  rate-limit:
+    enabled: true
+    capacity: 100
+    refill-rate: 10
+    refill-time: 1
+    time-unit: MINUTES
 
 springdoc:
   api-docs:
