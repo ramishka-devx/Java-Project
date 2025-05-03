@@ -91,7 +91,7 @@ public class AuthService {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            if (request.getPassword().equals(user.getPassword())) {
+            if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 UserResponse userResponse = userService.loadUserByUsername(user.getEmail());
                 List<String> permissionNames = userRepository.findPermissionNamesByUsername(user.getUsername());
                 userResponse.setPermissions(permissionNames);
