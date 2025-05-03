@@ -55,29 +55,32 @@ public class AuthService {
      * @return true if registration was successful, false otherwise.
      */
     public UserResponse registerUser(RegisterRequest request) {
-
         List<Role> roles = roleRepository.findByName("ROLE_USER");
         if (roles.isEmpty()) {
             throw new RuntimeException("Default role not found: ROLE_USER");
         }
         Role userRole = roles.get(0);
 
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setActive(true);
-        user.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .isActive(true)
+                .isLocked(false)
+                .createdAt(new java.sql.Timestamp(System.currentTimeMillis()))
+                .userRoles(new HashSet<>())
+                .build();
 
-        UserRole userRoleMapping = new UserRole();
-        userRoleMapping.setUser(new User());
-        userRoleMapping.setRole(userRole);
+        UserRole userRoleMapping = UserRole.builder()
+                .user(user)
+                .role(userRole)
+                .build();
         user.getUserRoles().add(userRoleMapping);
 
-        userRepository.save(new User());
-        List<String> permissionNames = new ArrayList<>();
-
-        return UserResponse.fromEntity(new User(), permissionNames);
+        user = userRepository.save(user);
+        
+        List<String> permissionNames = userRepository.findPermissionNamesByUsername(user.getUsername());
+        return UserResponse.fromEntity(user, permissionNames);
     }
 
 
@@ -232,7 +235,7 @@ public class AuthService {
      */
     public boolean isAuthenticated(HttpServletRequest request) {
         final String token = extractTokenFromHeader(request);
-        if ((token == null || !jwtService.isTokenValid(token)) && isBlacklisted(token) ) {
+        if ((token == null || !jwtService.isTokenValid(token)) || isBlacklisted(token) ) {
             return false;
         }
 
