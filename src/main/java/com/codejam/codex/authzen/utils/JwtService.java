@@ -106,7 +106,7 @@ public class JwtService {
     }
 
     public boolean isTokenBlacklisted(String token) {
-        return blacklistedTokens.contains(token) ? false : true;
+        return blacklistedTokens.contains(token);
     }
 
     public void blacklistToken(String token) {
