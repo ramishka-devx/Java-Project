@@ -49,6 +49,24 @@ import java.util.List;
 )
 public class SecurityConfiguration {
 
+    @Value("${spring.security.cors.allowed-origins}")
+    private String allowedOrigins;
+
+    @Value("${spring.security.cors.allowed-methods}")
+    private String allowedMethods;
+
+    @Value("${spring.security.cors.allowed-headers}")
+    private String allowedHeaders;
+
+    @Value("${spring.security.cors.exposed-headers}")
+    private String exposedHeaders;
+
+    @Value("${spring.security.cors.allow-credentials}")
+    private boolean allowCredentials;
+
+    @Value("${spring.security.cors.max-age}")
+    private long maxAge;
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -136,15 +154,30 @@ public class SecurityConfiguration {
     }
 
     /**
-     * Configures a basic CORS filter allowing all origins, headers, and common methods.
-     * NOTE: Adjust allowed origins for production environments.
+     * Configures production-ready CORS filter with properties from application.yml
+     * Implements strict CORS policy suitable for production use
      */
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // Consider restricting in production
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        
+        // Set allowed origins from properties (comma-separated list)
+        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        
+        // Set allowed methods from properties
+        config.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
+        
+        // Set allowed headers from properties
+        config.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+        
+        // Set exposed headers from properties
+        config.setExposedHeaders(Arrays.asList(exposedHeaders.split(",")));
+        
+        // Set allow credentials from properties
+        config.setAllowCredentials(allowCredentials);
+        
+        // Set max age from properties
+        config.setMaxAge(maxAge);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
